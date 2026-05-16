@@ -121,24 +121,29 @@ export default function App() {
       <header className="h-14 bg-[#0d1117] border-b border-slate-800 flex items-center justify-between px-6 shrink-0 z-10">
         <div className="flex items-center gap-4">
           <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
-          <h1 className="font-mono text-sm tracking-widest text-emerald-500 uppercase font-bold">
-            KAVACH SYSTEM v4.2 // AI ASSISTANT
-          </h1>
-        </div>
-        <div className="hidden md:flex gap-8 items-center text-[11px] font-mono text-slate-500 uppercase">
-          <div>LOCO ID: <span className="text-slate-200">WAP7-31047</span></div>
-          <div>REGION: <span className="text-slate-200">WR / MUMBAI CENTRAL</span></div>
-          <div className="flex gap-1">
-            <div className="w-1 h-3 bg-emerald-500"></div>
-            <div className="w-1 h-3 bg-emerald-500"></div>
-            <div className="w-1 h-3 bg-emerald-500"></div>
-            <div className="w-1 h-3 bg-slate-700"></div>
+            <h1 className="font-mono text-sm tracking-widest text-emerald-500 uppercase font-bold">
+              <span className="inline-block relative">
+                KAVACH SYSTEM v4.2 // AI ASSISTANT
+                <span className="absolute inset-0 bg-emerald-500/10 animate-pulse blur-sm -z-10" />
+              </span>
+            </h1>
           </div>
-        </div>
-      </header>
+          <div className="hidden md:flex gap-8 items-center text-[11px] font-mono text-slate-500 uppercase">
+            <div>LOCO ID: <span className="text-slate-200 font-bold blur-[0.5px] hover:blur-0 transition-all cursor-crosshair">WAP7-31047</span></div>
+            <div>REGION: <span className="text-slate-200 blur-[0.5px] hover:blur-0 transition-all cursor-crosshair">WR / MUMBAI CENTRAL</span></div>
+            <div className="flex gap-1">
+              <div className="w-1 h-3 bg-emerald-500 animate-[bounce_1s_infinite_0s] opacity-80"></div>
+              <div className="w-1 h-3 bg-emerald-500 animate-[bounce_1s_infinite_0.2s] opacity-80"></div>
+              <div className="w-1 h-3 bg-emerald-500 animate-[bounce_1s_infinite_0.4s] opacity-80"></div>
+              <div className="w-1 h-3 bg-slate-700"></div>
+            </div>
+          </div>
+        </header>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 flex overflow-hidden">
+        {/* MAIN CONTENT AREA */}
+        <main className="flex-1 flex overflow-hidden relative">
+          {/* Scanning lines effect */}
+          <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03))] z-0 bg-[length:100%_4px,3px_100%]" />
         {/* LEFT SIDE: MANUAL REFERENCE */}
         <section className="hidden lg:flex w-80 border-r border-slate-800 bg-[#080a0e] p-6 flex-col">
           <div className="mb-4 flex justify-between items-end">
