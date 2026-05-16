@@ -1,19 +1,9 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 
 dotenv.config();
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
-    }
-  }
-});
 
 const KAVACH_MANUAL_CONTEXT = `
 You are an expert AI assistant for Indian Railways Loco Pilots, specializing in the "KAVACH" (Train Collision Avoidance System - TCAS) operating instructions.
@@ -50,48 +40,48 @@ Instructions:
 - If information isn't in the manual context, state that you don't have that specific detail but suggest checking the physical manual.
 `;
 
-async function startServer() {
+export async function createApp() {
   const app = express();
-  const PORT = 3000;
-
   app.use(express.json());
 
   // Chat API
   app.post("/api/chat", async (req, res) => {
     try {
       const { message, history } = req.body;
-      const model = "gemini-3-flash-preview";
+      const modelName = "gemini-3-flash-preview";
 
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
-        console.error("API Key is missing or default");
         return res.status(500).json({ 
           error: "API_KEY_MISSING",
-          details: "GEMINI_API_KEY is not set or is using the placeholder value. Please set it in your hosting provider's environment variables." 
+          details: "GEMINI_API_KEY is not set. Please set it in Settings > Secrets." 
         });
       }
 
-      // Re-initialize with latest API key to be safe
-      const genAI = new GoogleGenAI(apiKey);
-      const modelInstance = genAI.getGenerativeModel({ model });
+      // Use the global ai client but ensure the latest key is used if needed
+      // Actually, per skill, we can just use the initialized client if the key is in env.
+      // But if we want to be safe with dynamic keys:
+      const dynamicAi = new GoogleGenAI({
+        apiKey: apiKey,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
 
       const contents = [
         ...(history || []),
         { role: 'user', parts: [{ text: message }] }
       ];
 
-      const result = await modelInstance.generateContent({
+      const response = await dynamicAi.models.generateContent({
+        model: modelName,
         contents,
-        systemInstruction: KAVACH_MANUAL_CONTEXT,
+        config: {
+          systemInstruction: KAVACH_MANUAL_CONTEXT,
+        },
       });
 
-      const response = await result.response;
-      const text = response.text();
+      const text = response.text;
 
-      if (!text) {
-        throw new Error("Empty response from AI model");
-      }
-
+      if (!text) throw new Error("Empty response from AI model");
       res.json({ text });
     } catch (error: any) {
       console.error("Gemini Error:", error);
@@ -102,17 +92,21 @@ async function startServer() {
     }
   });
 
-  // Health check for deployment monitoring
+  // Health check
   app.get("/api/health", (req, res) => {
-    res.json({ 
-      status: "ok", 
-      env: process.env.NODE_ENV,
-      hasKey: !!process.env.GEMINI_API_KEY 
-    });
+    res.json({ status: "ok", hasKey: !!process.env.GEMINI_API_KEY });
   });
+
+  return app;
+}
+
+async function startServer() {
+  const app = await createApp();
+  const PORT = 3000;
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
@@ -131,4 +125,6 @@ async function startServer() {
   });
 }
 
-startServer();
+if (process.env.NODE_ENV !== "production") {
+  startServer();
+}

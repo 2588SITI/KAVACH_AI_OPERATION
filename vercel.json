@@ -1,17 +1,8 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "dist/server.cjs",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "dist/**",
-      "use": "@vercel/static"
-    }
-  ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/dist/server.cjs" },
+    { "source": "/api/(.*)", "destination": "/api/index.ts" },
     { "source": "/(.*)", "destination": "/index.html" }
-  ]
+  ],
+  "cleanUrls": true
 }

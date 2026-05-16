@@ -115,18 +115,20 @@ export default function App() {
       const errorDetail = error.message || 'Unknown Error';
       
       if (errorDetail.includes('API_KEY_INVALID') || errorDetail.includes('API_KEY_MISSING')) {
-        errorText = "API Key missing or invalid. Check your Vercel Environment Variables (GEMINI_API_KEY).";
+        errorText = "API Key missing or invalid. Check your Vercel/Hosting Environment Variables (GEMINI_API_KEY).";
       } else if (errorDetail.toLowerCase().includes('quota')) {
         errorText = "API quota exceeded. Please try again later.";
       }
       
       setMessages(prev => [...prev, { role: 'model', parts: [{ text: errorText }] }]);
       
-      // Always show debug info for pilots to report logs
-      setMessages(prev => [...prev, { 
-        role: 'model', 
-        parts: [{ text: `🔧 **System Log:** ${errorDetail}` }] 
-      }]);
+      // If deployed, suggest checking logs
+      if (window.location.hostname.includes('vercel.app')) {
+        setMessages(prev => [...prev, { 
+          role: 'model', 
+          parts: [{ text: `🔧 **Vercel Log:** ${errorDetail}` }] 
+        }]);
+      }
     } finally {
       setIsLoading(false);
     }
