@@ -41,7 +41,13 @@ export default function App() {
   useEffect(() => {
     // Health check on load
     fetch('/api/health')
-      .then(r => r.json())
+      .then(async r => {
+        if (!r.ok) {
+          const text = await r.text();
+          throw new Error(`Health check status ${r.status}: ${text.substring(0, 50)}`);
+        }
+        return r.json();
+      })
       .then(data => {
         console.log("Backend Health:", data);
         if (!data.hasKey && window.location.hostname.includes('vercel')) {
@@ -51,7 +57,15 @@ export default function App() {
           }]);
         }
       })
-      .catch(err => console.error("Health check failed:", err));
+      .catch(err => {
+        console.error("Health check failed:", err);
+        if (window.location.hostname.includes('vercel')) {
+          setMessages([{ 
+            role: 'model', 
+            parts: [{ text: `🔧 **System Initialization Error:** ${err.message}. This usually indicates a routing issue or misconfigured Vercel function.` }] 
+          }]);
+        }
+      });
 
     // Initialize Web Speech API
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -111,14 +125,22 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           message: textToSend,
-          history: messages 
+          history: messages.slice(-6) // Send last 6 messages for context
         }),
       });
 
-      const data = await response.json();
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        console.error("Non-JSON Response:", text);
+        throw new Error(`Server returned non-JSON response (Status ${response.status}). This often means a 404 or configuration error.`);
+      }
       
       if (!response.ok) {
-        throw new Error(data.details || data.error || 'API Error');
+        throw new Error(data.details || data.error || `API Error ${response.status}`);
       }
       
       const modelMessage: Message = { role: 'model', parts: [{ text: data.text }] };

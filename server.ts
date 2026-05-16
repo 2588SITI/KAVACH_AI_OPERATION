@@ -44,8 +44,10 @@ export async function createApp() {
   const app = express();
   app.use(express.json());
 
+  const apiRouter = express.Router();
+
   // Chat API
-  app.post("/api/chat", async (req, res) => {
+  apiRouter.post("/chat", async (req, res) => {
     try {
       const { message, history } = req.body;
       const modelName = "gemini-3-flash-preview";
@@ -58,9 +60,6 @@ export async function createApp() {
         });
       }
 
-      // Use the global ai client but ensure the latest key is used if needed
-      // Actually, per skill, we can just use the initialized client if the key is in env.
-      // But if we want to be safe with dynamic keys:
       const dynamicAi = new GoogleGenAI({
         apiKey: apiKey,
         httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
@@ -93,9 +92,11 @@ export async function createApp() {
   });
 
   // Health check
-  app.get("/api/health", (req, res) => {
+  apiRouter.get("/health", (req, res) => {
     res.json({ status: "ok", hasKey: !!process.env.GEMINI_API_KEY });
   });
+
+  app.use("/api", apiRouter);
 
   return app;
 }
