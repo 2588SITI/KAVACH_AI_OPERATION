@@ -62,32 +62,53 @@ async function startServer() {
       const { message, history } = req.body;
       const model = "gemini-3-flash-preview";
 
-      if (!process.env.GEMINI_API_KEY) {
-        return res.status(500).json({ error: "GEMINI_API_KEY is not set in the environment variables." });
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+        console.error("API Key is missing or default");
+        return res.status(500).json({ 
+          error: "API_KEY_MISSING",
+          details: "GEMINI_API_KEY is not set or is using the placeholder value. Please set it in your hosting provider's environment variables." 
+        });
       }
 
-      // Convert history to contents format and add the latest message
+      // Re-initialize with latest API key to be safe
+      const genAI = new GoogleGenAI(apiKey);
+      const modelInstance = genAI.getGenerativeModel({ model });
+
       const contents = [
         ...(history || []),
         { role: 'user', parts: [{ text: message }] }
       ];
 
-      const response = await ai.models.generateContent({
-        model,
+      const result = await modelInstance.generateContent({
         contents,
-        config: {
-          systemInstruction: KAVACH_MANUAL_CONTEXT,
-        },
+        systemInstruction: KAVACH_MANUAL_CONTEXT,
       });
 
-      res.json({ text: response.text });
+      const response = await result.response;
+      const text = response.text();
+
+      if (!text) {
+        throw new Error("Empty response from AI model");
+      }
+
+      res.json({ text });
     } catch (error: any) {
       console.error("Gemini Error:", error);
       res.status(500).json({ 
         error: "Failed to generate response",
-        details: error.message 
+        details: error.message || "Unknown server error"
       });
     }
+  });
+
+  // Health check for deployment monitoring
+  app.get("/api/health", (req, res) => {
+    res.json({ 
+      status: "ok", 
+      env: process.env.NODE_ENV,
+      hasKey: !!process.env.GEMINI_API_KEY 
+    });
   });
 
   // Vite middleware for development

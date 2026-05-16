@@ -110,17 +110,23 @@ export default function App() {
       const modelMessage: Message = { role: 'model', parts: [{ text: data.text }] };
       setMessages(prev => [...prev, modelMessage]);
     } catch (error: any) {
-      console.error(error);
+      console.error("Chat Error:", error);
       let errorText = "क्षमा करें, कुछ तकनीकी समस्या आई है।";
+      const errorDetail = error.message || 'Unknown Error';
       
-      if (error.message.includes('API_KEY_INVALID') || error.message.includes('GEMINI_API_KEY is not set')) {
-        errorText = "API Key missing or invalid. Please check the Secrets panel in AI Studio Settings.";
-      } else if (error.message.includes('quota')) {
+      if (errorDetail.includes('API_KEY_INVALID') || errorDetail.includes('API_KEY_MISSING')) {
+        errorText = "API Key missing or invalid. Check your Vercel Environment Variables (GEMINI_API_KEY).";
+      } else if (errorDetail.toLowerCase().includes('quota')) {
         errorText = "API quota exceeded. Please try again later.";
       }
       
-      const errorMessage: Message = { role: 'model', parts: [{ text: errorText }] };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [...prev, { role: 'model', parts: [{ text: errorText }] }]);
+      
+      // Always show debug info for pilots to report logs
+      setMessages(prev => [...prev, { 
+        role: 'model', 
+        parts: [{ text: `🔧 **System Log:** ${errorDetail}` }] 
+      }]);
     } finally {
       setIsLoading(false);
     }
