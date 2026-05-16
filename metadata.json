@@ -1,0 +1,6 @@
+{
+  "name": "Kavach Assistant (Loco Pilot)",
+  "description": "An AI-powered assistant for Loco Pilots to consult the Kavach (TCAS) operating manual via voice or text.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
