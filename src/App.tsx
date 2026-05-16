@@ -39,6 +39,20 @@ export default function App() {
   const [recognition, setRecognition] = useState<any>(null);
 
   useEffect(() => {
+    // Health check on load
+    fetch('/api/health')
+      .then(r => r.json())
+      .then(data => {
+        console.log("Backend Health:", data);
+        if (!data.hasKey && window.location.hostname.includes('vercel')) {
+          setMessages([{ 
+            role: 'model', 
+            parts: [{ text: "⚠️ **Setup Note:** GEMINI_API_KEY is not set in Vercel environment variables. Chat will not work until added." }] 
+          }]);
+        }
+      })
+      .catch(err => console.error("Health check failed:", err));
+
     // Initialize Web Speech API
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
