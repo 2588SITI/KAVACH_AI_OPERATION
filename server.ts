@@ -62,19 +62,31 @@ async function startServer() {
       const { message, history } = req.body;
       const model = "gemini-3-flash-preview";
 
-      const chat = ai.chats.create({
+      if (!process.env.GEMINI_API_KEY) {
+        return res.status(500).json({ error: "GEMINI_API_KEY is not set in the environment variables." });
+      }
+
+      // Convert history to contents format and add the latest message
+      const contents = [
+        ...(history || []),
+        { role: 'user', parts: [{ text: message }] }
+      ];
+
+      const response = await ai.models.generateContent({
         model,
+        contents,
         config: {
           systemInstruction: KAVACH_MANUAL_CONTEXT,
         },
-        history: history || [],
       });
 
-      const result = await chat.sendMessage({ message });
-      res.json({ text: result.text });
-    } catch (error) {
+      res.json({ text: response.text });
+    } catch (error: any) {
       console.error("Gemini Error:", error);
-      res.status(500).json({ error: "Failed to generate response" });
+      res.status(500).json({ 
+        error: "Failed to generate response",
+        details: error.message 
+      });
     }
   });
 

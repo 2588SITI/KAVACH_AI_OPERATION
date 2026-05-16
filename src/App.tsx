@@ -101,14 +101,25 @@ export default function App() {
         }),
       });
 
-      if (!response.ok) throw new Error('API Error');
-      
       const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.details || data.error || 'API Error');
+      }
+      
       const modelMessage: Message = { role: 'model', parts: [{ text: data.text }] };
       setMessages(prev => [...prev, modelMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      const errorMessage: Message = { role: 'model', parts: [{ text: "क्षमा करें, कुछ तकनीकी समस्या आई है।" }] };
+      let errorText = "क्षमा करें, कुछ तकनीकी समस्या आई है।";
+      
+      if (error.message.includes('API_KEY_INVALID') || error.message.includes('GEMINI_API_KEY is not set')) {
+        errorText = "API Key missing or invalid. Please check the Secrets panel in AI Studio Settings.";
+      } else if (error.message.includes('quota')) {
+        errorText = "API quota exceeded. Please try again later.";
+      }
+      
+      const errorMessage: Message = { role: 'model', parts: [{ text: errorText }] };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
